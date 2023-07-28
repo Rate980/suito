@@ -55,9 +55,12 @@ void setup()
 void loop()
 {
     M5.update();
-    M5.Lcd.setTextColor(WHITE, 0x867d); 
+    M5.Lcd.setTextColor(WHITE, 0x867d);
+    // 水筒の外見
+    M5.Lcd.fillRect(2, 20, 126, 35 , 0x6bf1); 
+    M5.Lcd.drawRect(5, 55, 120, 178, BLUE);
 
-    int left = 3; // 何割残っているか
+    int left = 5; // 何割残っているか
     showLeftDrink(left);
     
     if (M5.BtnA.wasPressed())
@@ -83,7 +86,7 @@ void showLeftDrink(int left)
         M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
     }
     if (left >= 5) {
-    M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 1つ目の矩形を表示
+        M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 一番下の水
     }
 }
 
