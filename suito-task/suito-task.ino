@@ -43,19 +43,51 @@ void setup()
     }
     xTaskCreatePinnedToCore(tofTask, "tofTask", 4096, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(wifiTask, "wifi", 8192, NULL, 1, NULL, 1);
+    // 文字
+    M5.begin();
+    M5.Power.begin();
+    M5.Lcd.setBrightness(200);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setTextFont(7);
+    M5.Lcd.fillScreen(0x867d);
 }
 
 void loop()
 {
     M5.update();
+    M5.Lcd.setTextColor(WHITE, 0x867d); 
+
+    int left = 5; // 何割残っているか
+    showLeftDrink(left);
+    
     if (M5.BtnA.wasPressed())
     {
         Serial.println("BtnA");
         sendLocation();
     }
-    delay(10);
+    delay(500);
 }
-//さわるな
+
+void showLeftDrink(int left)
+{   
+    M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 1つ目の矩形を表示
+
+    // left の値に応じて追加の矩形を表示
+    if (left >= 2) {
+        M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
+    }
+    if (left >= 3) {
+        M5.Lcd.fillRect(10, 130, 110, 30, BLUE);
+    }
+    if (left >= 4) {
+        M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
+    }
+    if (left >= 5) {
+        M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
+    }
+}
+
+// さわるな
 void tofTask(void *)
 {
     while (true)
