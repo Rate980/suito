@@ -45,6 +45,7 @@ void setup()
     xTaskCreatePinnedToCore(wifiTask, "wifi", 8192, NULL, 1, NULL, 1);
 }
 
+bool isUpdate = true;
 void loop()
 {
     M5.update();
@@ -52,6 +53,14 @@ void loop()
     {
         Serial.println("BtnA");
         sendLocation();
+    }
+    if (M5.BtnB.isPressed())
+    {
+        isUpdate = false;
+    }
+    if (M5.BtnB.isReleased())
+    {
+        isUpdate = true;
     }
     delay(10);
 }
