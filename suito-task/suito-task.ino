@@ -11,6 +11,14 @@
 WiFiMulti wifiMulti;
 QueueHandle_t wifiQueue;
 
+#define WATER_FULL 0
+#define WATER_Q3 1
+#define WATER_HALF 2
+#define WATER_Q1 3
+#define WATER_EMPTY 4
+
+uint8_t waterLevel = WATER_EMPTY;
+
 // さわるな
 bool isWifiConnected()
 {
@@ -33,6 +41,7 @@ void sendLocation()
 // さわるな
 void setup()
 {
+    M5.begin();
     Serial.begin(115200);
     wifiMulti.addAP("maruyama", "marufuck");
     Wire.begin();
@@ -52,6 +61,8 @@ void setup()
     M5.Lcd.fillScreen(0x867d);
 }
 
+bool isUpdate = true;
+int oldState = 0;
 void loop()
 {
     M5.update();
@@ -68,7 +79,42 @@ void loop()
         Serial.println("BtnA");
         sendLocation();
     }
-    delay(500);
+
+    if (M5.BtnB.isPressed())
+    {
+        isUpdate = false;
+    }
+    if (M5.BtnB.isReleased())
+    {
+        isUpdate = true;
+    }
+    if (isUpdate)
+    {
+        auto state = waterLevel;
+        if (state != oldState)
+        {
+            switch (state)
+            {
+            case WATER_EMPTY:
+                Serial.println("WATER_EMPTY");
+                break;
+            case WATER_FULL:
+                Serial.println("WATER_FULL");
+                break;
+            case WATER_HALF:
+                Serial.println("WATER_HALF");
+                break;
+            case WATER_Q1:
+                Serial.println("WATER_Q1");
+                break;
+            case WATER_Q3:
+                Serial.println("WATER_Q3");
+                break;
+            }
+        }
+        oldState = state;
+    }
+    delay(1);
 }
 
 void showLeftDrink(int left)
@@ -95,8 +141,49 @@ void tofTask(void *)
 {
     while (true)
     {
-        Serial.println(readDistance());
-        delay(1000);
+        int distance = 0;
+        for (size_t i = 0; i < 5; i++)
+        {
+            delay(10);
+            auto read = readDistance();
+            if (read == -1)
+            {
+                i--;
+                continue;
+            }
+            distance += read;
+        }
+        distance /= 5;
+        // M5.Lcd.setCursor(0, 0);
+        // M5.Lcd.printf("%03d", distance);
+        if (distance > 230)
+        {
+            continue;
+        }
+        if (distance > 190)
+        {
+            waterLevel = WATER_EMPTY;
+            continue;
+        }
+
+        if (distance > 150)
+        {
+            waterLevel = WATER_Q1;
+            continue;
+        }
+
+        if (distance > 130)
+        {
+            waterLevel = WATER_HALF;
+            continue;
+        }
+
+        if (distance > 100)
+        {
+            waterLevel = WATER_Q3;
+            continue;
+        }
+        waterLevel = WATER_FULL;
     }
 }
 
@@ -114,6 +201,10 @@ int readDistance()
     data_cnt = 0;
     distance = 0;
     distance_tmp = 0;
+    if (!Wire.available())
+    {
+        return -1;
+    }
     while (Wire.available())
     {
         distance_tmp = Wire.read();
