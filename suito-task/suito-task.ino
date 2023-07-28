@@ -11,6 +11,7 @@
 WiFiMulti wifiMulti;
 QueueHandle_t wifiQueue;
 
+// さわるな
 bool isWifiConnected()
 {
     return wifiMulti.run() == WL_CONNECTED;
@@ -29,6 +30,7 @@ void sendLocation()
     }
 }
 
+// さわるな
 void setup()
 {
     Serial.begin(115200);
@@ -63,6 +65,8 @@ void tofTask(void *)
     }
 }
 
+// TOFセンサーから距離を読み込む
+// さわるな
 int readDistance()
 {
     uint16_t distance;
