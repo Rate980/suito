@@ -55,8 +55,11 @@ void setup()
 void loop()
 {
     M5.update();
-    M5.Lcd.setTextColor(WHITE, 0x867d);
-    // M5.Lcd.fillRect(180, 12, 122, 10, BLUE);
+    M5.Lcd.setTextColor(WHITE, 0x867d); 
+
+    int left = 5; // 何割残っているか
+    showLeftDrink(left);
+    
     if (M5.BtnA.wasPressed())
     {
         Serial.println("BtnA");
@@ -64,6 +67,26 @@ void loop()
     }
     delay(500);
 }
+
+void showLeftDrink(int left)
+{   
+    M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 1つ目の矩形を表示
+
+    // left の値に応じて追加の矩形を表示
+    if (left >= 2) {
+        M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
+    }
+    if (left >= 3) {
+        M5.Lcd.fillRect(10, 130, 110, 30, BLUE);
+    }
+    if (left >= 4) {
+        M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
+    }
+    if (left >= 5) {
+        M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
+    }
+}
+
 // さわるな
 void tofTask(void *)
 {
