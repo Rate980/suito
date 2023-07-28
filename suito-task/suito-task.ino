@@ -43,19 +43,28 @@ void setup()
     }
     xTaskCreatePinnedToCore(tofTask, "tofTask", 4096, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(wifiTask, "wifi", 8192, NULL, 1, NULL, 1);
+    // 文字
+    M5.begin();
+    M5.Power.begin();
+    M5.Lcd.setBrightness(200);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setTextFont(7);
+    M5.Lcd.fillScreen(0x867d);
 }
 
 void loop()
 {
     M5.update();
+    M5.Lcd.setTextColor(WHITE, 0x867d);
+    // M5.Lcd.fillRect(180, 12, 122, 10, BLUE);
     if (M5.BtnA.wasPressed())
     {
         Serial.println("BtnA");
         sendLocation();
     }
-    delay(10);
+    delay(500);
 }
-//さわるな
+// さわるな
 void tofTask(void *)
 {
     while (true)
