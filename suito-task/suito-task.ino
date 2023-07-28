@@ -43,6 +43,9 @@ void setup()
     }
     xTaskCreatePinnedToCore(tofTask, "tofTask", 4096, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(wifiTask, "wifi", 8192, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(speakerTask, "speaker", 2048, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(timerTask, "timer", 2048, NULL, 1, NULL, 0);
+
     // 文字
     M5.begin();
     M5.Power.begin();
@@ -55,11 +58,11 @@ void setup()
 void loop()
 {
     M5.update();
-    M5.Lcd.setTextColor(WHITE, 0x867d); 
+    M5.Lcd.setTextColor(WHITE, 0x867d);
 
     int left = 5; // 何割残っているか
     showLeftDrink(left);
-    
+
     if (M5.BtnA.wasPressed())
     {
         Serial.println("BtnA");
@@ -69,20 +72,24 @@ void loop()
 }
 
 void showLeftDrink(int left)
-{   
+{
     M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 1つ目の矩形を表示
 
     // left の値に応じて追加の矩形を表示
-    if (left >= 2) {
+    if (left >= 2)
+    {
         M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
     }
-    if (left >= 3) {
+    if (left >= 3)
+    {
         M5.Lcd.fillRect(10, 130, 110, 30, BLUE);
     }
-    if (left >= 4) {
+    if (left >= 4)
+    {
         M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
     }
-    if (left >= 5) {
+    if (left >= 5)
+    {
         M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
     }
 }
@@ -143,5 +150,47 @@ void wifiTask(void *)
         {
             Serial.println("http failed to send location");
         }
+    }
+}
+
+void timerTask(void *)
+{
+    while (true)
+    {
+        delay(60 * 60 * 1000);
+        // delay(10000);
+        xTaskHandle handle;
+        xTaskCreatePinnedToCore(soundTask, "sound", 4096, NULL, 1, &handle, 0);
+        auto old = M5.BtnC.read();
+        while (true)
+        {
+            auto now = M5.BtnC.read();
+            // Serial.println(now);
+            if (old != now && now == HIGH)
+            {
+                break;
+            }
+            delay(10);
+            old = now;
+        }
+        vTaskDelete(handle);
+    }
+}
+
+void soundTask(void *)
+{
+    while (true)
+    {
+        M5.Speaker.tone(1000, 50);
+        delay(100);
+    }
+}
+
+void speakerTask(void *)
+{
+    while (true)
+    {
+        M5.Speaker.update();
+        delay(1);
     }
 }
