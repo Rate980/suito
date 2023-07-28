@@ -57,7 +57,7 @@ void loop()
     M5.update();
     M5.Lcd.setTextColor(WHITE, 0x867d); 
 
-    int left = 5; // 何割残っているか
+    int left = 3; // 何割残っているか
     showLeftDrink(left);
     
     if (M5.BtnA.wasPressed())
@@ -70,20 +70,20 @@ void loop()
 
 void showLeftDrink(int left)
 {   
-    M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 1つ目の矩形を表示
+        M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
 
     // left の値に応じて追加の矩形を表示
     if (left >= 2) {
-        M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
+        M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
     }
     if (left >= 3) {
         M5.Lcd.fillRect(10, 130, 110, 30, BLUE);
     }
     if (left >= 4) {
-        M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
+        M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
     }
     if (left >= 5) {
-        M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
+    M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 1つ目の矩形を表示
     }
 }
 
