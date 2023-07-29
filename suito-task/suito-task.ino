@@ -233,7 +233,7 @@ void wifiTask(void *)
         HTTPClient http;
         http.begin("https://suito.rate980.net/location");
         auto httpRes = http.POST(String(data));
-        if (httpRes != 200)
+        if (httpRes < 200 || httpRes >= 300)
         {
             Serial.println("http failed to send location");
         }
