@@ -125,18 +125,15 @@ void loop()
 void showLeftDrink(int left)
 {
 
-
     M5.Lcd.fillRect(6, 56, 118, 176, 0x6bf1);
 
     M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
-
 
     // left の値に応じて追加の矩形を表示
     if (left >= 2)
     {
 
         M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
-
     }
     if (left >= 3)
     {
@@ -281,7 +278,6 @@ void apiTask(void *)
     }
     vTaskDelete(NULL);
 }
-
 
 void timerTask(void *)
 {
