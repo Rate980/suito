@@ -59,6 +59,8 @@ void setup()
     M5.Lcd.setTextFont(7);
     M5.Lcd.fillScreen(0x867d);
 }
+int oldState = 0;
+bool isUpdate = true;
 
 void loop()
 {
