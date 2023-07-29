@@ -159,7 +159,6 @@ void tofTask(void *)
         distance /= 5;
         // M5.Lcd.setCursor(0, 0);
         // M5.Lcd.printf("%03d", distance);
-        delay(1000);
         if (distance > 230)
         {
             continue;
