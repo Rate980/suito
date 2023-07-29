@@ -73,14 +73,6 @@ void loop()
         Serial.println("BtnA");
         sendLocation();
     }
-}
-
-void showLeftDrink(int left)
-{
-    M5.Lcd.fillRect(6, 56, 118, 176, 0x6bf1);
-
-    M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
-
     if (M5.BtnB.isPressed())
     {
         isUpdate = false;
@@ -122,6 +114,8 @@ void showLeftDrink(int left)
 
 void showLeftDrink(int left)
 {
+    M5.Lcd.fillRect(6, 56, 118, 176, 0x6bf1);
+
     M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
 
     // left の値に応じて追加の矩形を表示
