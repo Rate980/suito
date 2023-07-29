@@ -11,6 +11,14 @@
 WiFiMulti wifiMulti;
 QueueHandle_t wifiQueue;
 
+#define WATER_FULL 5
+#define WATER_Q3 4
+#define WATER_HALF 3
+#define WATER_Q1 2
+#define WATER_EMPTY 1
+
+uint8_t waterLevel = WATER_EMPTY;
+
 // さわるな
 bool isWifiConnected()
 {
@@ -54,31 +62,74 @@ void setup()
     M5.Lcd.setTextFont(7);
     M5.Lcd.fillScreen(0x867d);
 }
+int oldState = 0;
+bool isUpdate = true;
 
 void loop()
 {
     M5.update();
     M5.Lcd.setTextColor(WHITE, 0x867d);
-
-    int left = 5; // 何割残っているか
-    showLeftDrink(left);
+    // 水筒の外見
+    M5.Lcd.fillRect(2, 20, 126, 35, 0x6bf1);
+    M5.Lcd.drawRect(5, 55, 120, 178, BLUE);
 
     if (M5.BtnA.wasPressed())
     {
         Serial.println("BtnA");
         sendLocation();
     }
-    delay(500);
+    if (M5.BtnB.isPressed())
+    {
+        isUpdate = false;
+    }
+    if (M5.BtnB.isReleased())
+    {
+        isUpdate = true;
+    }
+    if (isUpdate)
+    {
+        auto state = waterLevel;
+        if (state != oldState)
+        {
+            showLeftDrink(state);
+            switch (state)
+            {
+            case WATER_EMPTY:
+                sendLocation();
+                Serial.println("WATER_EMPTY");
+                break;
+            case WATER_FULL:
+                Serial.println("WATER_FULL");
+                break;
+            case WATER_HALF:
+                Serial.println("WATER_HALF");
+                break;
+            case WATER_Q1:
+                Serial.println("WATER_Q1");
+                break;
+            case WATER_Q3:
+                Serial.println("WATER_Q3");
+                break;
+            }
+        }
+        oldState = state;
+    }
+    delay(1);
 }
 
 void showLeftDrink(int left)
 {
-    M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 1つ目の矩形を表示
+
+    M5.Lcd.fillRect(6, 56, 118, 176, 0x6bf1);
+
+    M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
+
 
     // left の値に応じて追加の矩形を表示
     if (left >= 2)
     {
-        M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
+        M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
+
     }
     if (left >= 3)
     {
@@ -86,11 +137,12 @@ void showLeftDrink(int left)
     }
     if (left >= 4)
     {
-        M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
+        M5.Lcd.fillRect(10, 95, 110, 30, BLUE);
     }
     if (left >= 5)
     {
-        M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
+        M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 一番下の水
+
     }
 }
 
@@ -99,8 +151,46 @@ void tofTask(void *)
 {
     while (true)
     {
-        Serial.println(readDistance());
-        delay(1000);
+        int distance = 0;
+        for (size_t i = 0; i < 5; i++)
+        {
+            delay(10);
+            auto read = readDistance();
+            if (read == -1)
+            {
+                i--;
+                continue;
+            }
+            distance += read;
+        }
+        distance /= 5;
+        // M5.Lcd.setCursor(0, 0);
+        // M5.Lcd.printf("%03d", distance);
+        if (distance > 230)
+        {
+            continue;
+        }
+        if (distance > 190)
+        {
+            waterLevel = WATER_EMPTY;
+            continue;
+        }
+        if (distance > 150)
+        {
+            waterLevel = WATER_Q1;
+            continue;
+        }
+        if (distance > 130)
+        {
+            waterLevel = WATER_HALF;
+            continue;
+        }
+        if (distance > 100)
+        {
+            waterLevel = WATER_Q3;
+            continue;
+        }
+        waterLevel = WATER_FULL;
     }
 }
 
@@ -118,6 +208,10 @@ int readDistance()
     data_cnt = 0;
     distance = 0;
     distance_tmp = 0;
+    if (!Wire.available())
+    {
+        return -1;
+    }
     while (Wire.available())
     {
         distance_tmp = Wire.read();
@@ -146,7 +240,7 @@ void wifiTask(void *)
         HTTPClient http;
         http.begin("https://suito.rate980.net/location");
         auto httpRes = http.POST(String(data));
-        if (httpRes != 200)
+        if (httpRes < 200 || httpRes >= 300)
         {
             Serial.println("http failed to send location");
         }
