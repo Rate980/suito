@@ -144,8 +144,47 @@ void tofTask(void *)
 {
     while (true)
     {
-        Serial.println(readDistance());
+        int distance = 0;
+        for (size_t i = 0; i < 5; i++)
+        {
+            delay(10);
+            auto read = readDistance();
+            if (read == -1)
+            {
+                i--;
+                continue;
+            }
+            distance += read;
+        }
+        distance /= 5;
+        // M5.Lcd.setCursor(0, 0);
+        // M5.Lcd.printf("%03d", distance);
         delay(1000);
+        if (distance > 230)
+        {
+            continue;
+        }
+        if (distance > 190)
+        {
+            waterLevel = WATER_EMPTY;
+            continue;
+        }
+        if (distance > 150)
+        {
+            waterLevel = WATER_Q1;
+            continue;
+        }
+        if (distance > 130)
+        {
+            waterLevel = WATER_HALF;
+            continue;
+        }
+        if (distance > 100)
+        {
+            waterLevel = WATER_Q3;
+            continue;
+        }
+        waterLevel = WATER_FULL;
     }
 }
 
@@ -163,6 +202,10 @@ int readDistance()
     data_cnt = 0;
     distance = 0;
     distance_tmp = 0;
+    if (!Wire.available())
+    {
+        return -1;
+    }
     while (Wire.available())
     {
         distance_tmp = Wire.read();
