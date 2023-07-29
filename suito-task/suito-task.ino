@@ -51,6 +51,9 @@ void setup()
     }
     xTaskCreatePinnedToCore(tofTask, "tofTask", 4096, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(wifiTask, "wifi", 8192, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(speakerTask, "speaker", 2048, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(timerTask, "timer", 2048, NULL, 1, NULL, 0);
+
     // 文字
     M5.begin();
     M5.Power.begin();
@@ -116,14 +119,17 @@ void loop()
 
 void showLeftDrink(int left)
 {
+
     M5.Lcd.fillRect(6, 56, 118, 176, 0x6bf1);
 
     M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
+
 
     // left の値に応じて追加の矩形を表示
     if (left >= 2)
     {
         M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
+
     }
     if (left >= 3)
     {
@@ -136,6 +142,7 @@ void showLeftDrink(int left)
     if (left >= 5)
     {
         M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 一番下の水
+
     }
 }
 
@@ -237,5 +244,47 @@ void wifiTask(void *)
         {
             Serial.println("http failed to send location");
         }
+    }
+}
+
+void timerTask(void *)
+{
+    while (true)
+    {
+        delay(60 * 60 * 1000);
+        // delay(10000);
+        xTaskHandle handle;
+        xTaskCreatePinnedToCore(soundTask, "sound", 4096, NULL, 1, &handle, 0);
+        auto old = M5.BtnC.read();
+        while (true)
+        {
+            auto now = M5.BtnC.read();
+            // Serial.println(now);
+            if (old != now && now == HIGH)
+            {
+                break;
+            }
+            delay(10);
+            old = now;
+        }
+        vTaskDelete(handle);
+    }
+}
+
+void soundTask(void *)
+{
+    while (true)
+    {
+        M5.Speaker.tone(1000, 50);
+        delay(100);
+    }
+}
+
+void speakerTask(void *)
+{
+    while (true)
+    {
+        M5.Speaker.update();
+        delay(1);
     }
 }
