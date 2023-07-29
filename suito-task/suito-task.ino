@@ -71,9 +71,6 @@ void loop()
     M5.Lcd.fillRect(2, 20, 126, 35, 0x6bf1);
     M5.Lcd.drawRect(5, 55, 120, 178, BLUE);
 
-    int left = 5; // 何割残っているか
-    showLeftDrink(left);
-
     if (M5.BtnA.wasPressed())
     {
         Serial.println("BtnA");
@@ -93,9 +90,11 @@ void loop()
         auto state = waterLevel;
         if (state != oldState)
         {
+            showLeftDrink(state);
             switch (state)
             {
             case WATER_EMPTY:
+                sendLocation();
                 Serial.println("WATER_EMPTY");
                 break;
             case WATER_FULL:
