@@ -1,3 +1,5 @@
+#include <ArduinoJson.h>
+
 #include <Wire.h>
 #include <M5Stack.h>
 #include <WiFi.h>
@@ -51,6 +53,8 @@ void setup()
     }
     xTaskCreatePinnedToCore(tofTask, "tofTask", 4096, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(wifiTask, "wifi", 8192, NULL, 1, NULL, 1);
+
+    xTaskCreatePinnedToCore(apiTask, "api", 8192, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(speakerTask, "speaker", 2048, NULL, 1, NULL, 0);
     xTaskCreatePinnedToCore(timerTask, "timer", 2048, NULL, 1, NULL, 0);
 
@@ -69,6 +73,7 @@ void loop()
 {
     M5.update();
     M5.Lcd.setTextColor(WHITE, 0x867d);
+
     // 水筒の外見
     M5.Lcd.fillRect(2, 20, 126, 35, 0x6bf1);
     M5.Lcd.drawRect(5, 55, 120, 178, BLUE);
@@ -120,6 +125,7 @@ void loop()
 void showLeftDrink(int left)
 {
 
+
     M5.Lcd.fillRect(6, 56, 118, 176, 0x6bf1);
 
     M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
@@ -128,6 +134,7 @@ void showLeftDrink(int left)
     // left の値に応じて追加の矩形を表示
     if (left >= 2)
     {
+
         M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
 
     }
@@ -142,7 +149,6 @@ void showLeftDrink(int left)
     if (left >= 5)
     {
         M5.Lcd.fillRect(10, 60, 110, 30, BLUE); // 一番下の水
-
     }
 }
 
@@ -246,6 +252,36 @@ void wifiTask(void *)
         }
     }
 }
+DynamicJsonDocument doc(1024);
+
+void apiTask(void *)
+{
+    while (true)
+    {
+        if (!isWifiConnected())
+        {
+            delay(1);
+            continue;
+        }
+        Serial.println("api");
+        HTTPClient http;
+        http.setReuse(true);
+        http.begin("https://api.openweathermap.org/data/2.5/weather?lat=36.576167&lon=136.650770&exclude=current,hourly&appid=257f9a947286511a62a1079b1ce41aec&units=metric");
+        http.GET();
+        deserializeJson(doc, http.getString().c_str());
+        double temp = doc["main"]["temp"];
+        http.begin("https://api.openweathermap.org/data/2.5/forecast?q=kanazawa,JP&mode=json&appid=257f9a947286511a62a1079b1ce41aec&lang=ja&units=metric&cnt=1");
+        http.GET();
+        deserializeJson(doc, http.getString().c_str());
+        int wether = doc["list"][0]["weather"][0]["id"];
+        Serial.println(temp);
+        Serial.println(wether);
+        break;
+        // delay(5 * 60 * 1000);
+    }
+    vTaskDelete(NULL);
+}
+
 
 void timerTask(void *)
 {
