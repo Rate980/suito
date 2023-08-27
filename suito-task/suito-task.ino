@@ -63,8 +63,13 @@ void setup()
     M5.Power.begin();
     M5.Lcd.setBrightness(200);
     M5.Lcd.setTextSize(2);
-    M5.Lcd.setTextFont(7);
+    M5.Lcd.setTextFont(1);
     M5.Lcd.fillScreen(0x867d);
+    M5.Lcd.setTextSize(5);
+    M5.Lcd.setTextColor(BLACK, 0x867d);
+    M5.Lcd.setCursor(170, 150);
+    M5.Lcd.print("36.1 C");
+    M5.Lcd.fillCircle(240, 70, 50, ORANGE);
 }
 int oldState = 0;
 bool isUpdate = true;
@@ -273,6 +278,9 @@ void apiTask(void *)
         int wether = doc["list"][0]["weather"][0]["id"];
         Serial.println(temp);
         Serial.println(wether);
+        // M5.Lcd.setCursor(170, 150);
+        // M5.Lcd.print(temp);
+        // M5.Lcd.print(" C");
         break;
         // delay(5 * 60 * 1000);
     }
