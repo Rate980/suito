@@ -68,6 +68,7 @@ void setup()
     xTaskCreatePinnedToCore(apiTask, "api", 8192, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(speakerTask, "speaker", 2048, NULL, 1, NULL, 0);
     xTaskCreatePinnedToCore(timerTask, "timer", 2048, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(limitSwitchTask, "limitSwitch", 2048, NULL, 1, NULL, 0);
 
     pinMode(SW, INPUT_PULLDOWN);
 
@@ -364,7 +365,7 @@ void speakerTask(void *)
     }
 }
 
-void limitSwitch(void *)
+void limitSwitchTask(void *)
 {
     TaskHandle_t handle = NULL;
     while (true)
@@ -372,8 +373,7 @@ void limitSwitch(void *)
         auto state = digitalRead(SW);
         if (state == HIGH)
         {
-            if (handle == NULL || eTaskGetState(handle) == eDeleted ||
-                eTaskGetState(handle) == eSuspended || eTaskGetState(handle) == eInvalid)
+            if (handle == NULL || eTaskGetState(handle) == eDeleted)
             {
                 Serial.println("HIGH");
                 xTaskCreatePinnedToCore(changeValue, "changeValue", 4096, NULL, 1, &handle, 0);
@@ -381,7 +381,7 @@ void limitSwitch(void *)
         }
         else
         {
-            if (handle != NULL && eTaskGetState(handle) == eRunning ||
+            if (handle != NULL && eTaskGetState(handle) == eRunning || eTaskGetState(handle) == eSuspended ||
                 eTaskGetState(handle) == eReady || eTaskGetState(handle) == eBlocked)
             {
                 Serial.println("LOW");
