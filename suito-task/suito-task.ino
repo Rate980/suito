@@ -1,3 +1,5 @@
+#include <Adafruit_NeoPixel.h>
+
 #include <ArduinoJson.h>
 
 #include <Wire.h>
@@ -7,6 +9,11 @@
 #include <HTTPClient.h>
 
 #define MTOF171000c0_ADDRESS 0x52
+
+#define PIN 2
+#define NUMPIXELS 10
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 // #define I2C_PIN_SDA 21
 // #define I2C_PIN_SCL 22
@@ -18,8 +25,10 @@ QueueHandle_t wifiQueue;
 #define WATER_HALF 3
 #define WATER_Q1 2
 #define WATER_EMPTY 1
+#define SW 5
 
 uint8_t waterLevel = WATER_EMPTY;
+auto pixelsColor = pixels.Color(0xff, 0xff, 0xff);
 
 // さわるな
 bool isWifiConnected()
@@ -47,6 +56,8 @@ void setup()
     wifiMulti.addAP("maruyama", "marufuck");
     Wire.begin();
     wifiQueue = xQueueCreate(4, sizeof(uint8_t));
+    pixels.begin();
+    pixels.clear();
     while (!Serial)
     {
         delay(1);
@@ -57,6 +68,8 @@ void setup()
     xTaskCreatePinnedToCore(apiTask, "api", 8192, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(speakerTask, "speaker", 2048, NULL, 1, NULL, 0);
     xTaskCreatePinnedToCore(timerTask, "timer", 2048, NULL, 1, NULL, 0);
+
+    pinMode(SW, INPUT_PULLDOWN);
 
     // 文字
     M5.begin();
@@ -73,6 +86,7 @@ void setup()
 }
 int oldState = 0;
 bool isUpdate = true;
+bool isUpdate2 = true;
 
 void loop()
 {
@@ -96,8 +110,10 @@ void loop()
     {
         isUpdate = true;
     }
-    if (isUpdate)
+    if (isUpdate && isUpdate2)
     {
+
+        auto lite_num = 0;
         auto state = waterLevel;
         if (state != oldState)
         {
@@ -106,23 +122,41 @@ void loop()
             {
             case WATER_EMPTY:
                 sendLocation();
+                lite_num = 0;
                 Serial.println("WATER_EMPTY");
                 break;
             case WATER_FULL:
+                lite_num = 10;
                 Serial.println("WATER_FULL");
                 break;
             case WATER_HALF:
+                lite_num = 5;
                 Serial.println("WATER_HALF");
                 break;
             case WATER_Q1:
+                lite_num = 2;
                 Serial.println("WATER_Q1");
                 break;
             case WATER_Q3:
+                lite_num = 8;
                 Serial.println("WATER_Q3");
                 break;
             }
+            for (size_t i = 0; i < NUMPIXELS; i++)
+            {
+                if (i < lite_num)
+                {
+                    pixels.setPixelColor(i, pixelsColor);
+                }
+                else
+                {
+                    pixels.setPixelColor(i, pixels.Color(0x00, 0x00, 0x00));
+                }
+                pixels.show();
+            }
         }
         oldState = state;
+        isUpdate2 = false;
     }
     delay(1);
 }
@@ -134,10 +168,11 @@ void showLeftDrink(int left)
 
     M5.Lcd.fillRect(10, 200, 110, 30, BLUE);
 
+    pixels.clear();
+
     // left の値に応じて追加の矩形を表示
     if (left >= 2)
     {
-
         M5.Lcd.fillRect(10, 165, 110, 30, BLUE);
     }
     if (left >= 3)
@@ -327,4 +362,39 @@ void speakerTask(void *)
         M5.Speaker.update();
         delay(1);
     }
+}
+
+void limitSwitch(void *)
+{
+    TaskHandle_t handle = NULL;
+    while (true)
+    {
+        auto state = digitalRead(SW);
+        if (state == HIGH)
+        {
+            if (handle == NULL || eTaskGetState(handle) == eDeleted ||
+                eTaskGetState(handle) == eSuspended || eTaskGetState(handle) == eInvalid)
+            {
+                Serial.println("HIGH");
+                xTaskCreatePinnedToCore(changeValue, "changeValue", 4096, NULL, 1, &handle, 0);
+            }
+        }
+        else
+        {
+            if (handle != NULL && eTaskGetState(handle) == eRunning ||
+                eTaskGetState(handle) == eReady || eTaskGetState(handle) == eBlocked)
+            {
+                Serial.println("LOW");
+                vTaskDelete(handle);
+            }
+        }
+        delay(1);
+    }
+}
+
+void changeValue(void *)
+{
+    delay(500);
+    isUpdate2 = true;
+    vTaskDelete(NULL);
 }
