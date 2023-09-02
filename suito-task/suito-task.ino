@@ -28,7 +28,7 @@ QueueHandle_t wifiQueue;
 #define SW 5
 
 uint8_t waterLevel = WATER_EMPTY;
-auto pixelsColor = pixels.Color(0xff, 0xff, 0xff);
+auto pixelsColor = pixels.Color(0x00, 0x20, 0xff);
 
 // さわるな
 bool isWifiConnected()
@@ -82,12 +82,14 @@ void setup()
     M5.Lcd.setTextSize(5);
     M5.Lcd.setTextColor(BLACK, 0x867d);
     M5.Lcd.setCursor(170, 150);
-    M5.Lcd.print("36.1 C");
+    M5.Lcd.print("34.0 C");
     M5.Lcd.fillCircle(240, 70, 50, ORANGE);
 }
 int oldState = 0;
 bool isUpdate = true;
 bool isUpdate2 = true;
+bool limitOldState = false;
+int count = 100;
 
 void loop()
 {
@@ -111,9 +113,23 @@ void loop()
     {
         isUpdate = true;
     }
-    if (isUpdate)
+    bool limitState = digitalRead(SW) == HIGH;
+    if (limitOldState != limitState)
     {
+        if (count != 0)
+        {
 
+            if (limitState)
+            {
+                count = 50;
+            }
+        }
+    }
+    limitOldState = limitState;
+
+    if (isUpdate && count >= 0)
+    {
+        count--;
         auto lite_num = 0;
         auto state = waterLevel;
         if (state != oldState)
@@ -145,7 +161,7 @@ void loop()
             }
             for (size_t i = 0; i < NUMPIXELS; i++)
             {
-                if (i > lite_num)
+                if (i >= lite_num)
                 {
                     pixels.setPixelColor(i, pixelsColor);
                 }
@@ -364,43 +380,29 @@ void speakerTask(void *)
         delay(1);
     }
 }
-int limitOldState = 0;
+// int limitOldState = 0;
 
-void limitSwitchTask(void *)
-{
-    TaskHandle_t handle = NULL;
-    while (true)
-    {
-        auto state = digitalRead(SW);
-        if (state != limitOldState)
-        {
-            Serial.println(state);
-            if (state == HIGH)
-            {
-                if (handle == NULL || eTaskGetState(handle) == eDeleted)
-                {
-                    Serial.println("HIGH");
-                    xTaskCreatePinnedToCore(changeValue, "changeValue", 4096, NULL, 1, &handle, 0);
-                }
-            }
-            else
-            {
-                if (handle != NULL && eTaskGetState(handle) == eRunning || eTaskGetState(handle) == eSuspended ||
-                    eTaskGetState(handle) == eReady || eTaskGetState(handle) == eBlocked)
-                {
-                    Serial.println("LOW");
-                    vTaskDelete(handle);
-                }
-            }
-        }
-        limitOldState = state;
-        delay(10);
-    }
-}
-
-void changeValue(void *)
-{
-    delay(500);
-    isUpdate2 = true;
-    vTaskDelete(NULL);
-}
+// void limitSwitchTask(void *)
+// {
+//     int state;
+//     while (true)
+//     {
+//         state = digitalRead(SW);
+//         if (state != limitOldState)
+//         {
+//             Serial.println(state);
+//             if (state == HIGH)
+//             {
+//                 isUpdate2 = true;
+//                 delay(500);
+//                 isUpdate2 = false;
+//             }
+//             else
+//             {
+//                 isUpdate2 = false;
+//             }
+//         }
+//         limitOldState = state;
+//         delay(10);
+//     }
+// }
