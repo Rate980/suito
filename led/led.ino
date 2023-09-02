@@ -9,6 +9,7 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ80
 
 void setup()
 {
+    Serial.begin(115200);
     pixels.begin();
     pixels.clear();
     for (size_t i = 0; i < NUMPIXELS; i++)
@@ -17,8 +18,23 @@ void setup()
     }
     pixels.show();
     pinMode(SW, INPUT_PULLDOWN);
+    while (!Serial)
+    {
+        delay(1);
+    }
 }
+
+bool oldState = false;
+bool state;
 
 void loop()
 {
+    state = digitalRead(SW);
+    if (oldState != state)
+    {
+
+        Serial.println(state);
+    }
+    oldState = state;
+    delay(1);
 }
