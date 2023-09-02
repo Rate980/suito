@@ -68,7 +68,7 @@ void setup()
     xTaskCreatePinnedToCore(apiTask, "api", 8192, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(speakerTask, "speaker", 2048, NULL, 1, NULL, 0);
     xTaskCreatePinnedToCore(timerTask, "timer", 2048, NULL, 1, NULL, 0);
-    xTaskCreatePinnedToCore(limitSwitchTask, "limitSwitch", 2048, NULL, 1, NULL, 0);
+    // xTaskCreatePinnedToCore(limitSwitchTask, "limitSwitch", 2048, NULL, 1, NULL, 0);
 
     pinMode(SW, INPUT_PULLDOWN);
 
@@ -111,7 +111,7 @@ void loop()
     {
         isUpdate = true;
     }
-    if (isUpdate && isUpdate2)
+    if (isUpdate)
     {
 
         auto lite_num = 0;
@@ -123,11 +123,11 @@ void loop()
             {
             case WATER_EMPTY:
                 sendLocation();
-                lite_num = 0;
+                lite_num = 10;
                 Serial.println("WATER_EMPTY");
                 break;
             case WATER_FULL:
-                lite_num = 10;
+                lite_num = 0;
                 Serial.println("WATER_FULL");
                 break;
             case WATER_HALF:
@@ -135,17 +135,17 @@ void loop()
                 Serial.println("WATER_HALF");
                 break;
             case WATER_Q1:
-                lite_num = 2;
+                lite_num = 8;
                 Serial.println("WATER_Q1");
                 break;
             case WATER_Q3:
-                lite_num = 8;
+                lite_num = 2;
                 Serial.println("WATER_Q3");
                 break;
             }
             for (size_t i = 0; i < NUMPIXELS; i++)
             {
-                if (i < lite_num)
+                if (i > lite_num)
                 {
                     pixels.setPixelColor(i, pixelsColor);
                 }
@@ -157,7 +157,7 @@ void loop()
             }
         }
         oldState = state;
-        isUpdate2 = false;
+        // isUpdate2 = false;
     }
     delay(1);
 }
@@ -364,6 +364,7 @@ void speakerTask(void *)
         delay(1);
     }
 }
+int limitOldState = 0;
 
 void limitSwitchTask(void *)
 {
@@ -371,24 +372,29 @@ void limitSwitchTask(void *)
     while (true)
     {
         auto state = digitalRead(SW);
-        if (state == HIGH)
+        if (state != limitOldState)
         {
-            if (handle == NULL || eTaskGetState(handle) == eDeleted)
+            Serial.println(state);
+            if (state == HIGH)
             {
-                Serial.println("HIGH");
-                xTaskCreatePinnedToCore(changeValue, "changeValue", 4096, NULL, 1, &handle, 0);
+                if (handle == NULL || eTaskGetState(handle) == eDeleted)
+                {
+                    Serial.println("HIGH");
+                    xTaskCreatePinnedToCore(changeValue, "changeValue", 4096, NULL, 1, &handle, 0);
+                }
+            }
+            else
+            {
+                if (handle != NULL && eTaskGetState(handle) == eRunning || eTaskGetState(handle) == eSuspended ||
+                    eTaskGetState(handle) == eReady || eTaskGetState(handle) == eBlocked)
+                {
+                    Serial.println("LOW");
+                    vTaskDelete(handle);
+                }
             }
         }
-        else
-        {
-            if (handle != NULL && eTaskGetState(handle) == eRunning || eTaskGetState(handle) == eSuspended ||
-                eTaskGetState(handle) == eReady || eTaskGetState(handle) == eBlocked)
-            {
-                Serial.println("LOW");
-                vTaskDelete(handle);
-            }
-        }
-        delay(1);
+        limitOldState = state;
+        delay(10);
     }
 }
 
